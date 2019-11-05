@@ -1,0 +1,227 @@
+---
+title: "Ch 12 R Notebook"
+output: html_notebook
+---
+
+```{r setup, incluse=FALSE}
+library(tidyverse)
+```
+
+#12.2 Exercises
+
+###Exercise 1
+```{r}
+table1
+table2
+table3
+table4a
+table4b
+```
+
+
+###Exercise 2
+```{r}
+table2
+
+t2_cases<-table2 %>%
+  filter(type=="cases") %>%
+  select(country, year, count) %>%
+  rename(cases=count)
+
+t2_pop<-table2 %>%
+  filter(type=="population") %>%
+  select(country, year, count) %>%
+  rename(population=count)
+  
+t2_redux<-t2_cases %>%
+  inner_join(t2_pop, by=c("country", "year"))%>%
+  mutate(rate=cases/population*10000)
+
+t2_redux
+```
+
+
+###Exercise 3
+Plot using table2
+```{r}
+tb2_plot<-table2%>%
+  filter(type=="cases")
+
+library(ggplot2)
+ggplot(tb2_plot, aes(year, count)) + 
+  geom_line(aes(group = country), colour = "grey50") + 
+  geom_point(aes(colour = country))
+```
+
+
+#12.3 Exercises
+
+###Exercise 1
+```{r}
+stocks <- tibble(
+  year   = c(2015, 2015, 2016, 2016),
+  half  = c(   1,    2,     1,    2),
+  return = c(1.88, 0.59, 0.92, 0.17)
+)
+
+stocks
+stocks %>% 
+  spread(year, return) %>% 
+  gather("year", "return", `2015`:`2016`)
+```
+Gather changes columns into values, whereas spread changes values into columns. In the above example, the "year" column changed from a numeric class (double) to a string class (character). The convert argument will attempt to keep the same type: 
+```{r}
+stocks
+stocks %>% 
+  spread(year, return, convert=TRUE) %>% 
+  gather("year", "return", `2015`:`2016`, convert=TRUE)
+```
+
+
+###Exercise 2
+```{r}
+table4a
+
+table4a %>% 
+  gather(1999, 2000, key = "year", value = "cases")
+```
+The above code fails since 1999 and 2000 are column names; thus, they must be treated as such in our code (AKA: put quotation marks around them!)
+```{r}
+table4a %>% 
+  gather("1999", "2000", key = "year", value = "cases")
+```
+
+
+###Exercise 3
+```{r}
+people <- tribble(
+  ~name,             ~key,    ~value,
+  #-----------------|--------|------
+  "Phillip Woods",   "age",       45,
+  "Phillip Woods",   "height",   186,
+  "Phillip Woods",   "age",       50,
+  "Jessica Cordero", "age",       37,
+  "Jessica Cordero", "height",   156
+)
+```
+Spreading the above tibble will faill sinc there are two values associated with Phillip Woods' age. 
+
+###Exercise 4
+
+#12.4 Exercises
+
+###Exercise 1
+```{r}
+tibble(x = c("a,b,c", "d,e,f,g", "h,i,j")) %>% 
+  separate(x, c("one", "two", "three"), extra = "warn")
+```
+```{r}
+tibble(x = c("a,b,c", "d,e,f,g", "h,i,j")) %>% 
+  separate(x, c("one", "two", "three"), extra = "drop")
+```
+```{r}
+tibble(x = c("a,b,c", "d,e,f,g", "h,i,j")) %>% 
+  separate(x, c("one", "two", "three"), extra = "merge")
+```
+
+```{r}
+tibble(x = c("a,b,c", "d,e", "f,g,i")) %>% 
+  separate(x, c("one", "two", "three"), fill="warn")
+```
+```{r}
+tibble(x = c("a,b,c", "d,e", "f,g,i")) %>% 
+  separate(x, c("one", "two", "three"), fill="left")
+```
+```{r}
+tibble(x = c("a,b,c", "d,e", "f,g,i")) %>% 
+  separate(x, c("one", "two", "three"), fill="right")
+```
+
+###Exercise 2
+```{r}
+table3 %>% 
+  separate(rate, into = c("cases", "population"), remove=FALSE)
+```
+```{r}
+table5 %>% 
+  unite(new, century, year, sep="", remove=FALSE)
+```
+The "remove" argument determines whether you want to keep the previous column(s) you seperated/removed. You would set it to false if the column(s) you messed with are those you want to keep (for instance, although you want the seperate "cases" and "populations" columns, you might want to keep the original "rate". In that case, set remove=FALSE). In general, remove is automatically set to TRUE.
+
+###Exercise 3
+```{r}
+table3 %>% 
+  separate(rate, into = c("cases", "population"), remove=FALSE)
+
+table3 %>% 
+  extract(rate, into = c("cases", "population"), remove=FALSE)
+```
+
+#12.5 Exercises
+
+###Exercise 1
+```{r}
+stocks <- tibble(
+  year   = c(2015, 2015, 2015, 2015, 2016, 2016, 2016),
+  qtr    = c(   1,    2,    3,    4,    2,    3,    4),
+  return = c(1.88, 0.59, 0.35,   NA, 0.92, 0.17, 2.66)
+)
+stocks
+stocks %>% 
+  spread(year, return, fill=423)
+
+stocks %>% 
+  complete(year, qtr, fill=list(return=423))
+```
+The fill argument in spread sets a value for ALL missing values/NAs, whereas stocks sets a a value for each VARIABLE'S missing values/NAs.
+
+###Exercise 2
+```{r}
+treatment <- tribble(
+  ~ person,           ~ treatment, ~response,
+  "Derrick Whitmore", 1,           7,
+  NA,                 2,           10,
+  NA,                 3,           9,
+  "Katherine Burke",  1,           4
+)
+
+fill(treatment, person, .direction="down")
+fill(treatment, person, .direction="up")
+```
+Essentially, the ".direction" argument dtermines from with starting point do you want to fill the data. The defaut is "down" (i.e. the missing values are filled in based upon the value in the row above it). If .direction="down", then the missing value is based upon the values in the row below it.
+
+#12.6 Exercises
+```{r}
+View(who)
+
+who %>%
+  gather(key, value, new_sp_m014:newrel_f65, na.rm = TRUE) %>% 
+  mutate(key = stringr::str_replace(key, "newrel", "new_rel")) %>%
+  separate(key, c("new", "var", "sexage")) %>% 
+  select(-new, -iso2, -iso3) %>% 
+  separate(sexage, c("sex", "age"), sep = 1)
+```
+
+###Exercise 1
+I think its fair that the wuthor set na.rm=TRUE. Looking at the data, there are "0 values" present, meaning NA is not equivalent to "0 cases" in this dataset. in other words, NA means an absense of data. Since that is of no use to us, we can safely remove it.
+
+###Exercise 2
+```{r}
+who %>%
+  gather(key, value, new_sp_m014:newrel_f65, na.rm = TRUE)%>%
+  separate(key, c("new", "var", "sexage")) %>% 
+  filter(new=="newrel")
+```
+First an foremost, if we neglect the "mutate" step, we receive an error message. Our separate function will automatically split the "key" variable at each underscore. If we don't mutate the data so that newrel doesn't have an underscore, the seperate function will not split these columns approiately. In other words, instead of something like new=new, var=rel, and sexage=014, we obtain new=newrel, var=m014, and sexage=NA. Those NAs will screw us over BIG TIME.   
+
+###Exercise 3
+```{r}
+who %>%
+  gather(key, value, new_sp_m014:newrel_f65, na.rm = TRUE) %>% 
+  mutate(key = stringr::str_replace(key, "newrel", "new_rel")) %>%
+  separate(key, c("new", "var", "sexage"))%>%
+  select(country, iso2, iso3, new)
+```
+Looking at the data, iso2 and iso3 are simply abbreviations of the country. In other words, the variables country, iso2, and iso3 are simply different ways of writing the same thing. We only REALLY need one of them. Therefore, we can get rid of iso2 and iso3. Like the author said, keeping them is redundant!
+
+###Exercise 4
